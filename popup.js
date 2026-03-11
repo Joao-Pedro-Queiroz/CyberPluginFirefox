@@ -19,9 +19,11 @@ function addList(id, items, formatter = null) {
 function calculateScore(data) {
   let score = 100;
 
-  score -= (data.thirdPartyCount || 0) * 7;
+  score -= (data.thirdPartyCount || 0) * 4;
   score -= (data.cookieAnalysis?.thirdParty || 0) * 5;
   score -= (data.cookieAnalysis?.persistent || 0) * 2;
+  score -= (data.detectedTrackerCount || 0) * 6;
+  score -= (data.blockedCount || 0) * 2;
 
   if (data.localStorageUsed) score -= 10;
   if (data.sessionStorageUsed) score -= 5;
@@ -80,6 +82,8 @@ async function render() {
   document.getElementById("site").textContent = data.mainHost || "-";
   document.getElementById("requests").textContent = data.totalRequests ?? 0;
   document.getElementById("thirdPartyCount").textContent = data.thirdPartyCount ?? 0;
+  document.getElementById("detectedTrackerCount").textContent = data.detectedTrackerCount ?? 0;
+  document.getElementById("blockedCount").textContent = data.blockedCount ?? 0;
   document.getElementById("score").textContent = calculateScore(data);
 
   document.getElementById("cookiesTotal").textContent = data.cookieAnalysis?.total ?? 0;
@@ -105,6 +109,12 @@ async function render() {
     (item) => `${item.host} - ${item.reason}`
   );
   addList("hijackingSignals", data.hijackingSignals || []);
+  addList("detectedTrackers", data.detectedTrackers || []);
+  addList(
+    "blockedTrackers",
+    data.blockedRequests || [],
+    (item) => `${item.host} - ${item.reason}`
+  );
 
   document.getElementById("status").textContent = "Análise concluída.";
 }
@@ -115,6 +125,10 @@ document.getElementById("reload").addEventListener("click", async () => {
   if (tab?.id) {
     await browser.tabs.reload(tab.id);
   }
+});
+
+document.getElementById("openOptions").addEventListener("click", async () => {
+  await browser.runtime.sendMessage({ type: "OPEN_OPTIONS_PAGE" });
 });
 
 render();

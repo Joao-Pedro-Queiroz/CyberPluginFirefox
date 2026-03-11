@@ -1,5 +1,39 @@
 const tabData = new Map();
 
+let trackerDomains = [];
+let userBlockList = [];
+let blockedTrackers = [];
+
+async function loadTrackerDomains() {
+  try {
+    const response = await fetch(browser.runtime.getURL("trackerList.json"));
+    const data = await response.json();
+    trackerDomains = data.trackers || [];
+  } catch (error) {
+    console.error("Erro ao carregar trackerList.json:", error);
+    trackerDomains = [];
+  }
+}
+
+async function loadUserBlockList() {
+  try {
+    const data = await browser.storage.local.get("userBlockList");
+    userBlockList = data.userBlockList || [];
+  } catch (error) {
+    console.error("Erro ao carregar lista do usuário:", error);
+    userBlockList = [];
+  }
+}
+
+loadTrackerDomains();
+loadUserBlockList();
+
+browser.storage.onChanged.addListener((changes, area) => {
+  if (area === "local" && changes.userBlockList) {
+    userBlockList = changes.userBlockList.newValue || [];
+  }
+});
+
 function getHostname(url) {
   try {
     return new URL(url).hostname;
@@ -24,13 +58,29 @@ function isThirdParty(mainHost, requestHost) {
   return mainBase !== reqBase;
 }
 
+function isTracker(host) {
+  if (!host) return false;
+  return trackerDomains.some((domain) => host === domain || host.endsWith("." + domain));
+}
+
+function isUserBlocked(host) {
+  if (!host) return false;
+  return userBlockList.some((domain) => {
+    const normalized = (domain || "").trim().toLowerCase();
+    if (!normalized) return false;
+    return host === normalized || host.endsWith("." + normalized);
+  });
+}
+
 function ensureTab(tabId) {
   if (!tabData.has(tabId)) {
     tabData.set(tabId, {
       mainHost: null,
       requests: [],
       thirdPartyHosts: new Set(),
-      cookieSyncSignals: []
+      cookieSyncSignals: [],
+      blockedRequests: [],
+      detectedTrackers: new Set()
     });
   }
   return tabData.get(tabId);
@@ -55,7 +105,9 @@ browser.tabs.onUpdated.addListener((tabId, changeInfo, tab) => {
       mainHost: host,
       requests: [],
       thirdPartyHosts: new Set(),
-      cookieSyncSignals: []
+      cookieSyncSignals: [],
+      blockedRequests: [],
+      detectedTrackers: new Set()
     });
   }
 });
@@ -66,7 +118,7 @@ browser.tabs.onRemoved.addListener((tabId) => {
 
 browser.webRequest.onBeforeRequest.addListener(
   (details) => {
-    if (details.tabId < 0) return;
+    if (details.tabId < 0) return {};
 
     const tabInfo = ensureTab(details.tabId);
     const requestHost = getHostname(details.url);
@@ -76,19 +128,27 @@ browser.webRequest.onBeforeRequest.addListener(
     }
 
     const thirdParty = isThirdParty(tabInfo.mainHost, requestHost);
+    const trackerMatched = isTracker(requestHost);
+    const userBlockedMatched = isUserBlocked(requestHost);
 
     const requestRecord = {
       url: details.url,
       host: requestHost,
       type: details.type,
       method: details.method,
-      thirdParty
+      thirdParty,
+      trackerMatched,
+      userBlockedMatched
     };
 
     tabInfo.requests.push(requestRecord);
 
     if (thirdParty && requestHost) {
       tabInfo.thirdPartyHosts.add(requestHost);
+    }
+
+    if (trackerMatched && requestHost) {
+      tabInfo.detectedTrackers.add(requestHost);
     }
 
     if (thirdParty && hasTrackingIdPattern(details.url)) {
@@ -98,8 +158,26 @@ browser.webRequest.onBeforeRequest.addListener(
         reason: "Requisição third-party com parâmetro típico de identificador"
       });
     }
+
+    if ((trackerMatched || userBlockedMatched) && requestHost) {
+      const blockedItem = {
+        host: requestHost,
+        url: details.url,
+        reason: trackerMatched ? "Rastreador conhecido" : "Domínio bloqueado pelo usuário",
+        time: new Date().toISOString(),
+        tabId: details.tabId
+      };
+
+      tabInfo.blockedRequests.push(blockedItem);
+      blockedTrackers.push(blockedItem);
+
+      return { cancel: true };
+    }
+
+    return {};
   },
-  { urls: ["<all_urls>"] }
+  { urls: ["<all_urls>"] },
+  ["blocking"]
 );
 
 async function getCookieAnalysis(pageUrl, mainHost) {
@@ -178,7 +256,13 @@ browser.runtime.onMessage.addListener(async (message) => {
       thirdPartyHosts: Array.from(tabInfo.thirdPartyHosts),
       thirdPartyCount: tabInfo.thirdPartyHosts.size,
       cookieSyncSignals: tabInfo.cookieSyncSignals,
-      cookieAnalysis
+      cookieAnalysis,
+      blockedRequests: tabInfo.blockedRequests,
+      blockedCount: tabInfo.blockedRequests.length,
+      detectedTrackers: Array.from(tabInfo.detectedTrackers),
+      detectedTrackerCount: tabInfo.detectedTrackers.size,
+      trackerListSize: trackerDomains.length,
+      userBlockListSize: userBlockList.length
     };
   }
 
@@ -189,9 +273,16 @@ browser.runtime.onMessage.addListener(async (message) => {
         mainHost: getHostname(tab.url),
         requests: [],
         thirdPartyHosts: new Set(),
-        cookieSyncSignals: []
+        cookieSyncSignals: [],
+        blockedRequests: [],
+        detectedTrackers: new Set()
       });
     }
+    return { ok: true };
+  }
+
+  if (message?.type === "OPEN_OPTIONS_PAGE") {
+    await browser.runtime.openOptionsPage();
     return { ok: true };
   }
 

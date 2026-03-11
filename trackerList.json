@@ -1,0 +1,22 @@
+{
+  "trackers": [
+    "doubleclick.net",
+    "google-analytics.com",
+    "googletagmanager.com",
+    "facebook.net",
+    "facebook.com",
+    "connect.facebook.net",
+    "adservice.google.com",
+    "amazon-adsystem.com",
+    "ads.twitter.com",
+    "analytics.twitter.com",
+    "scorecardresearch.com",
+    "hotjar.com",
+    "mixpanel.com",
+    "taboola.com",
+    "outbrain.com",
+    "criteo.com",
+    "bing.com",
+    "bat.bing.com"
+  ]
+}

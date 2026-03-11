@@ -15,6 +15,8 @@
       <p><strong>Site:</strong> <span id="site">-</span></p>
       <p><strong>Total de requisições:</strong> <span id="requests">-</span></p>
       <p><strong>Domínios de terceira parte:</strong> <span id="thirdPartyCount">-</span></p>
+      <p><strong>Rastreadores conhecidos:</strong> <span id="detectedTrackerCount">-</span></p>
+      <p><strong>Rastreadores bloqueados:</strong> <span id="blockedCount">-</span></p>
       <p><strong>Privacidade:</strong> <span id="score">-</span></p>
     </section>
 
@@ -54,7 +56,20 @@
       <ul id="thirdPartyHosts"></ul>
     </section>
 
-    <button id="reload">Reanalisar página</button>
+    <section>
+      <h2>Rastreadores conhecidos detectados</h2>
+      <ul id="detectedTrackers"></ul>
+    </section>
+
+    <section>
+      <h2>Rastreadores bloqueados</h2>
+      <ul id="blockedTrackers"></ul>
+    </section>
+
+    <section class="actions">
+      <button id="reload">Reanalisar página</button>
+      <button id="openOptions">Gerenciar bloqueios</button>
+    </section>
   </main>
 
   <script src="popup.js"></script>

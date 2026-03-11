@@ -1,0 +1,194 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8" />
+  <title>Configuração de bloqueios</title>
+  <style>
+    body {
+      font-family: Arial, sans-serif;
+      max-width: 700px;
+      margin: 30px auto;
+      padding: 0 20px;
+      color: #111111;
+    }
+
+    h1 {
+      font-size: 24px;
+      margin-bottom: 20px;
+    }
+
+    h2 {
+      font-size: 18px;
+      margin-top: 24px;
+    }
+
+    .row {
+      display: flex;
+      gap: 10px;
+      margin-bottom: 16px;
+    }
+
+    input {
+      flex: 1;
+      padding: 10px;
+      font-size: 14px;
+    }
+
+    button {
+      padding: 10px 14px;
+      font-size: 14px;
+      cursor: pointer;
+    }
+
+    ul {
+      padding-left: 20px;
+    }
+
+    li {
+      margin-bottom: 8px;
+    }
+
+    .domain-row {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      gap: 12px;
+      border-bottom: 1px solid #e5e5e5;
+      padding: 8px 0;
+    }
+
+    .domain-name {
+      word-break: break-word;
+    }
+
+    .hint {
+      color: #555555;
+      font-size: 13px;
+    }
+
+    .success {
+      color: #0a7a31;
+      font-size: 13px;
+      margin-top: 8px;
+    }
+  </style>
+</head>
+<body>
+  <h1>Cyber Privacy Inspector - Gerenciar bloqueios</h1>
+
+  <p class="hint">
+    Adicione domínios manualmente para bloqueio. Exemplo: exemplo.com
+  </p>
+
+  <div class="row">
+    <input id="domainInput" type="text" placeholder="Digite um domínio, ex: exemplo.com" />
+    <button id="addBtn">Adicionar</button>
+  </div>
+
+  <div id="message" class="success"></div>
+
+  <h2>Domínios bloqueados pelo usuário</h2>
+  <div id="emptyState" class="hint">Nenhum domínio adicionado.</div>
+  <div id="domainList"></div>
+
+  <script>
+    const domainInput = document.getElementById("domainInput");
+    const addBtn = document.getElementById("addBtn");
+    const domainList = document.getElementById("domainList");
+    const emptyState = document.getElementById("emptyState");
+    const message = document.getElementById("message");
+
+    function normalizeDomain(value) {
+      return (value || "")
+        .trim()
+        .toLowerCase()
+        .replace(/^https?:\/\//, "")
+        .replace(/\/.*$/, "");
+    }
+
+    async function getUserBlockList() {
+      const data = await browser.storage.local.get("userBlockList");
+      return data.userBlockList || [];
+    }
+
+    async function saveUserBlockList(list) {
+      await browser.storage.local.set({ userBlockList: list });
+    }
+
+    function setMessage(text) {
+      message.textContent = text;
+      setTimeout(() => {
+        message.textContent = "";
+      }, 2500);
+    }
+
+    async function removeDomain(domain) {
+      const list = await getUserBlockList();
+      const newList = list.filter((item) => item !== domain);
+      await saveUserBlockList(newList);
+      await loadList();
+      setMessage("Domínio removido com sucesso.");
+    }
+
+    async function loadList() {
+      const list = await getUserBlockList();
+      domainList.innerHTML = "";
+
+      if (list.length === 0) {
+        emptyState.style.display = "block";
+        return;
+      }
+
+      emptyState.style.display = "none";
+
+      list.forEach((domain) => {
+        const row = document.createElement("div");
+        row.className = "domain-row";
+
+        const name = document.createElement("div");
+        name.className = "domain-name";
+        name.textContent = domain;
+
+        const removeBtn = document.createElement("button");
+        removeBtn.textContent = "Remover";
+        removeBtn.addEventListener("click", () => removeDomain(domain));
+
+        row.appendChild(name);
+        row.appendChild(removeBtn);
+        domainList.appendChild(row);
+      });
+    }
+
+    addBtn.addEventListener("click", async () => {
+      const normalized = normalizeDomain(domainInput.value);
+
+      if (!normalized) {
+        setMessage("Digite um domínio válido.");
+        return;
+      }
+
+      const list = await getUserBlockList();
+
+      if (list.includes(normalized)) {
+        setMessage("Esse domínio já está na lista.");
+        return;
+      }
+
+      list.push(normalized);
+      await saveUserBlockList(list);
+
+      domainInput.value = "";
+      await loadList();
+      setMessage("Domínio adicionado com sucesso.");
+    });
+
+    domainInput.addEventListener("keydown", async (event) => {
+      if (event.key === "Enter") {
+        addBtn.click();
+      }
+    });
+
+    loadList();
+  </script>
+</body>
+</html>
