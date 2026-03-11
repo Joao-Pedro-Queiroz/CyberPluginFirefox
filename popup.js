@@ -109,11 +109,15 @@ async function render() {
     (item) => `${item.host} - ${item.reason}`
   );
   addList("hijackingSignals", data.hijackingSignals || []);
-  addList("detectedTrackers", data.detectedTrackers || []);
+  addList(
+    "detectedTrackers",
+    data.detectedTrackers || [],
+    (item) => `${item.host} - ${item.party}`
+  );
   addList(
     "blockedTrackers",
     data.blockedRequests || [],
-    (item) => `${item.host} - ${item.reason}`
+    (item) => `${item.host} - ${item.reason} - ${item.party}`
   );
 
   document.getElementById("status").textContent = "Análise concluída.";

@@ -58,6 +58,10 @@ function isThirdParty(mainHost, requestHost) {
   return mainBase !== reqBase;
 }
 
+function classifyTrackerParty(mainHost, requestHost) {
+  return isThirdParty(mainHost, requestHost) ? "Terceira parte" : "Primeira parte";
+}
+
 function isTracker(host) {
   if (!host) return false;
   return trackerDomains.some((domain) => host === domain || host.endsWith("." + domain));
@@ -80,7 +84,7 @@ function ensureTab(tabId) {
       thirdPartyHosts: new Set(),
       cookieSyncSignals: [],
       blockedRequests: [],
-      detectedTrackers: new Set()
+      detectedTrackers: new Map()
     });
   }
   return tabData.get(tabId);
@@ -107,7 +111,7 @@ browser.tabs.onUpdated.addListener((tabId, changeInfo, tab) => {
       thirdPartyHosts: new Set(),
       cookieSyncSignals: [],
       blockedRequests: [],
-      detectedTrackers: new Set()
+      detectedTrackers: new Map()
     });
   }
 });
@@ -130,6 +134,7 @@ browser.webRequest.onBeforeRequest.addListener(
     const thirdParty = isThirdParty(tabInfo.mainHost, requestHost);
     const trackerMatched = isTracker(requestHost);
     const userBlockedMatched = isUserBlocked(requestHost);
+    const trackerParty = classifyTrackerParty(tabInfo.mainHost, requestHost);
 
     const requestRecord = {
       url: details.url,
@@ -138,7 +143,8 @@ browser.webRequest.onBeforeRequest.addListener(
       method: details.method,
       thirdParty,
       trackerMatched,
-      userBlockedMatched
+      userBlockedMatched,
+      trackerParty
     };
 
     tabInfo.requests.push(requestRecord);
@@ -148,7 +154,10 @@ browser.webRequest.onBeforeRequest.addListener(
     }
 
     if (trackerMatched && requestHost) {
-      tabInfo.detectedTrackers.add(requestHost);
+      tabInfo.detectedTrackers.set(requestHost, {
+        host: requestHost,
+        party: trackerParty
+      });
     }
 
     if (thirdParty && hasTrackingIdPattern(details.url)) {
@@ -164,6 +173,7 @@ browser.webRequest.onBeforeRequest.addListener(
         host: requestHost,
         url: details.url,
         reason: trackerMatched ? "Rastreador conhecido" : "Domínio bloqueado pelo usuário",
+        party: trackerParty,
         time: new Date().toISOString(),
         tabId: details.tabId
       };
@@ -259,7 +269,7 @@ browser.runtime.onMessage.addListener(async (message) => {
       cookieAnalysis,
       blockedRequests: tabInfo.blockedRequests,
       blockedCount: tabInfo.blockedRequests.length,
-      detectedTrackers: Array.from(tabInfo.detectedTrackers),
+      detectedTrackers: Array.from(tabInfo.detectedTrackers.values()),
       detectedTrackerCount: tabInfo.detectedTrackers.size,
       trackerListSize: trackerDomains.length,
       userBlockListSize: userBlockList.length
@@ -275,7 +285,7 @@ browser.runtime.onMessage.addListener(async (message) => {
         thirdPartyHosts: new Set(),
         cookieSyncSignals: [],
         blockedRequests: [],
-        detectedTrackers: new Set()
+        detectedTrackers: new Map()
       });
     }
     return { ok: true };
