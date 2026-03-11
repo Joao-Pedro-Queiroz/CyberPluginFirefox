@@ -53,6 +53,7 @@ indicadores de privacidade da página.
 
 ## Estrutura do Projeto
 
+```
 CyberPluginFirefox/ 
 ├── icons/ 
 │ └── icon.png 
@@ -65,6 +66,7 @@ CyberPluginFirefox/
 ├── popup.js 
 ├── trackerList.json 
 └── README.md
+```
 
 ------------------------------------------------------------------------
 
