@@ -53,9 +53,18 @@ indicadores de privacidade da página.
 
 ## Estrutura do Projeto
 
-CyberPluginFirefox/ ├── icons/ │ └── icon.png ├── background.js ├──
-content.js ├── manifest.json ├── options.html ├── popup.css ├──
-popup.html ├── popup.js ├── trackerList.json └── README.md
+CyberPluginFirefox/ 
+├── icons/ 
+│ └── icon.png 
+├── background.js 
+├── content.js 
+├── manifest.json 
+├── options.html 
+├── popup.css 
+├── popup.html 
+├── popup.js 
+├── trackerList.json 
+└── README.md
 
 ------------------------------------------------------------------------
 
