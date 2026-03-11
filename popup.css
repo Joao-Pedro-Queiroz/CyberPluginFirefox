@@ -1,0 +1,41 @@
+body {
+  font-family: Arial, sans-serif;
+  width: 380px;
+  margin: 0;
+  padding: 12px;
+}
+
+h1 {
+  font-size: 18px;
+  margin: 0 0 10px;
+}
+
+h2 {
+  font-size: 14px;
+  margin: 12px 0 6px;
+}
+
+p {
+  margin: 4px 0;
+  font-size: 13px;
+}
+
+ul {
+  margin: 6px 0;
+  padding-left: 18px;
+  max-height: 100px;
+  overflow-y: auto;
+  font-size: 12px;
+}
+
+button {
+  margin-top: 12px;
+  width: 100%;
+  padding: 8px;
+  cursor: pointer;
+}
+
+#status {
+  font-size: 12px;
+  margin-bottom: 10px;
+}

@@ -1,0 +1,62 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8" />
+  <title>Cyber Privacy Inspector</title>
+  <link rel="stylesheet" href="popup.css" />
+</head>
+<body>
+  <main>
+    <h1>Cyber Privacy Inspector</h1>
+    <div id="status">Analisando...</div>
+
+    <section>
+      <h2>Resumo</h2>
+      <p><strong>Site:</strong> <span id="site">-</span></p>
+      <p><strong>Total de requisições:</strong> <span id="requests">-</span></p>
+      <p><strong>Domínios de terceira parte:</strong> <span id="thirdPartyCount">-</span></p>
+      <p><strong>Privacidade:</strong> <span id="score">-</span></p>
+    </section>
+
+    <section>
+      <h2>Cookies</h2>
+      <p><strong>Total:</strong> <span id="cookiesTotal">-</span></p>
+      <p><strong>Primeira parte:</strong> <span id="cookiesFirstParty">-</span></p>
+      <p><strong>Terceira parte:</strong> <span id="cookiesThirdParty">-</span></p>
+      <p><strong>De sessão:</strong> <span id="cookiesSession">-</span></p>
+      <p><strong>Persistentes:</strong> <span id="cookiesPersistent">-</span></p>
+    </section>
+
+    <section>
+      <h2>Supercookies e Storage</h2>
+      <p><strong>localStorage:</strong> <span id="localStorage">-</span></p>
+      <p><strong>sessionStorage:</strong> <span id="sessionStorage">-</span></p>
+      <p><strong>IndexedDB:</strong> <span id="indexedDB">-</span></p>
+    </section>
+
+    <section>
+      <h2>Canvas fingerprint</h2>
+      <ul id="canvasSignals"></ul>
+    </section>
+
+    <section>
+      <h2>Cookie syncing</h2>
+      <ul id="cookieSyncSignals"></ul>
+    </section>
+
+    <section>
+      <h2>Potenciais ameaças de hijacking</h2>
+      <ul id="hijackingSignals"></ul>
+    </section>
+
+    <section>
+      <h2>Domínios de terceira parte</h2>
+      <ul id="thirdPartyHosts"></ul>
+    </section>
+
+    <button id="reload">Reanalisar página</button>
+  </main>
+
+  <script src="popup.js"></script>
+</body>
+</html>
